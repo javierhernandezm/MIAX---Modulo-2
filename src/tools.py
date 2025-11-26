@@ -3,6 +3,128 @@ import numpy as np
 import datetime as dt
 
 
+def cargar_y_analizar_precios(df):
+    """Carga y analiza la estructura inicial de df"""
+    # Cargar datos originales
+    df = df.copy()
+    
+    print(f"📏 Dimensiones originales: {df.shape}")
+    print(f"📋 Primeras 5 columnas: {list(df.columns[:5])}")
+    print(f"📋 Primeras 5 filas del índice: {list(df.index[:5])}")
+    print(f"\n📊 Muestra de los datos: \n{df.head()}")
+    
+    return df
+
+def estructurar_datos_precios_otros(df):
+    """Reestructura los datos para tener fechas como índice y bonos como columnas"""
+    df_structured = df.set_index(df.columns[0]).T
+    df_structured.index = pd.to_datetime(df_structured.index, format='%d/%m/%Y')
+    
+    # Ordenar por fecha
+    df_structured = df_structured.sort_index()
+
+    # Remover fines de semana
+    df_structured = df_structured[~df_structured.index.weekday.isin([5, 6])]
+    
+    print(f"📏 Dimensiones finales: {df_structured.shape}")
+    print(f"📅 Rango de fechas: {df_structured.index[0].strftime('%d/%m/%Y')} a {df_structured.index[-1].strftime('%d/%m/%Y')}")
+    print(f"🏷️ Instrumentos (columnas): {df_structured.shape[1]}")
+    
+    return df_structured
+
+def estructurar_datos_precios_varios(df_original):
+    """Reestructura los datos varios para tener fechas como índice e instrumentos como columnas"""
+    
+    df_varios_structured = df_original.set_index(df_original.columns[0])
+    df_varios_structured.index = pd.to_datetime(df_varios_structured.index, format='%d/%m/%Y')
+    df_varios_structured = df_varios_structured.sort_index()
+    
+    print(f"📏 Dimensiones finales: {df_varios_structured.shape}")
+    print(f"📅 Rango de fechas: {df_varios_structured.index[0].strftime('%d/%m/%Y')} a {df_varios_structured.index[-1].strftime('%d/%m/%Y')}")
+    print(f"🏷️ Instrumentos varios (columnas): {df_varios_structured.shape[1]}")
+
+    return df_varios_structured
+
+def limpiar_datos_precios(df):
+    """Limpia los datos según la estrategia recomendada"""
+
+    df_clean = df.copy()
+    
+    # Convertir #N/D a NaN
+    df_clean = df_clean.replace('#N/D', np.nan)
+    
+    # Convertir a numérico
+    for col in df_clean.columns:
+        df_clean[col] = pd.to_numeric(df_clean[col], errors='coerce')
+    
+    # Interpolar instrumentos con datos faltantes moderados
+    df_clean = df_clean.interpolate(method='linear')
+
+    # Estadísticas finales
+    missing_final = df_clean.isnull().sum().sum()
+    print(f"\n📊 RESULTADO FINAL:")
+    print(f"   • Instrumentos originales: {df.shape[1]}")
+    print(f"   • Instrumentos finales: {df_clean.shape[1]}")
+    print(f"   • Fechas: {df_clean.shape[0]}")
+    print(f"   • Valores faltantes restantes: {missing_final}")
+    print(f"   • Porcentaje datos completos: {((df_clean.size - missing_final) / df_clean.size * 100):.1f}%")
+    
+    # Verificar calidad final
+    if missing_final == 0:
+        calidad = "EXCELENTE"
+        emoji = "🟢"
+    elif missing_final / df_clean.size < 0.01:
+        calidad = "MUY BUENA"
+        emoji = "🔵"
+    elif missing_final / df_clean.size < 0.05:
+        calidad = "BUENA"
+        emoji = "🟡"
+    else:
+        calidad = "REGULAR"
+        emoji = "🟠"
+    
+    print(f"\n{emoji} CALIDAD DE DATOS: {calidad}")
+
+    return df_clean
+
+
+def analizar_valores_faltantes(df):
+    """Analiza patrones de valores faltantes en los datos de precios"""
+    # Identificar valores #N/D y NaN
+    missing_nd = (df == '#N/D').sum().sum()
+    missing_nan = df.isnull().sum().sum()
+    total_missing = missing_nd + missing_nan
+    
+    print(f"📊 Resumen de valores faltantes:")
+    print(f"   • Valores '#N/D': {missing_nd:,}")
+    print(f"   • Valores NaN: {missing_nan:,}")
+    print(f"   • Total faltantes: {total_missing:,}")
+    print(f"   • Porcentaje total: {(total_missing / df.size) * 100:.2f}%")
+    
+    # Análisis por columna (por bono)
+    print(f"\n📈 Análisis por instrumento:")
+    
+    # Convertir #N/D a NaN para análisis
+    df_analysis = df.replace('#N/D', np.nan)
+    missing_by_column = df_analysis.isnull().sum()
+    missing_percentage = (missing_by_column / len(df_analysis)) * 100
+    
+    print("Top 10 instrumentos con más valores faltantes:")
+    worst_instruments = missing_percentage.sort_values(ascending=False).head(10)
+    for i, (instrument, pct) in enumerate(worst_instruments.items(), 1):
+        status = "🔴" if pct > 30 else "🟡" if pct > 10 else "🟢"
+        print(f"   {i:2d}. {status} {instrument}: {pct:.1f}% ({int(missing_by_column[instrument])} días)")
+    
+    # Análisis temporal - patrones por fecha
+    print(f"\n📅 Análisis temporal:")
+    missing_by_date = df_analysis.isnull().sum(axis=1)
+    dates_with_issues = missing_by_date[missing_by_date > 0]
+    
+    if len(dates_with_issues) > 0:
+        print(f"   • Fechas con datos faltantes: {len(dates_with_issues)}")
+        print(f"   • Fecha con más faltantes: {dates_with_issues.idxmax().strftime('%d/%m/%Y')} ({dates_with_issues.max()} instrumentos)")
+    
+
 def procesar_precios_bonos(df_precios, df_universo):
     """
     Realiza la limpieza integral de la serie de precios de bonos.
