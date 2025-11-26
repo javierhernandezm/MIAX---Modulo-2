@@ -3,6 +3,7 @@ import seaborn as sns
 import pandas as pd
 
 def pie_count_volume_chart(df, group_col, title_prefix):
+    print(f"\nAnálisis de {group_col}:")
     dist_group_col = df[group_col].value_counts()
     print(f"Distribución de {group_col}:")
     print(dist_group_col)
@@ -28,9 +29,6 @@ def pie_count_volume_chart(df, group_col, title_prefix):
 
     plt.tight_layout()
     plt.show()
-
-def divisas_visualization(df):
-    pie_count_volume_chart(df, 'Ccy', 'Divisas')
 
 def callable_visualization(df):
     pie_count_volume_chart(df, 'Callable', 'Callable vs Non-Callable')
@@ -217,7 +215,7 @@ def seneority_visualization(df):
     fig, axes = plt.subplots(1, 2, figsize=(18, 6))
     fig.suptitle('Estructura de Capital: Conteo vs Volumen', fontsize=16)
 
-    sns.barplot(x=df_sen_pct.index, y=df_sen_pct['Description'], ax=axes[0], palette='Blues_r')
+    sns.barplot(x=df_sen_pct.index, y=df_sen_pct['Description'], ax=axes[0])
     axes[0].set_title('A) Distribución por Número de Bonos')
     axes[0].set_ylabel('% del Total de Bonos')
     axes[0].tick_params(axis='x', rotation=45)
@@ -225,7 +223,7 @@ def seneority_visualization(df):
     for i, v in enumerate(df_sen_pct['Description']):
         axes[0].text(i, v + 0.5, f'{v:.1f}%', ha='center', va='bottom', fontsize=10)
 
-    sns.barplot(x=df_sen_pct.index, y=df_sen_pct['Outstanding Amount'], ax=axes[1], palette='Blues_r')
+    sns.barplot(x=df_sen_pct.index, y=df_sen_pct['Outstanding Amount'], ax=axes[1])
     axes[1].set_title('B) Distribución por Volumen (Dinero invertido)')
     axes[1].set_ylabel('% del Total de Dinero')
     axes[1].tick_params(axis='x', rotation=45)
@@ -255,7 +253,7 @@ def ratings_dist_visualization(df):
     fig, axes = plt.subplots(1, 2, figsize=(18, 6))
     fig.suptitle('Riesgo de Crédito: Conteo vs Volumen', fontsize=16)
 
-    sns.barplot(x=df_rat_pct.index, y=df_rat_pct['Description'], ax=axes[0], palette='RdYlGn_r')
+    sns.barplot(x=df_rat_pct.index, y=df_rat_pct['Description'], ax=axes[0])
     axes[0].set_title('A) Distribución por Número de Bonos')
     axes[0].set_ylabel('% del Total de Bonos')
     axes[0].tick_params(axis='x', rotation=45)
@@ -263,7 +261,7 @@ def ratings_dist_visualization(df):
     for i, v in enumerate(df_rat_pct['Description']):
         axes[0].text(i, v + 0.5, f'{v:.1f}%', ha='center', va='bottom', fontsize=9)
 
-    sns.barplot(x=df_rat_pct.index, y=df_rat_pct['Outstanding Amount'], ax=axes[1], palette='RdYlGn_r')
+    sns.barplot(x=df_rat_pct.index, y=df_rat_pct['Outstanding Amount'], ax=axes[1])
     axes[1].set_title('B) Distribución por Volumen (Dinero invertido)')
     axes[1].set_ylabel('% del Total de Dinero')
     axes[1].tick_params(axis='x', rotation=45)
